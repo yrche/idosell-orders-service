@@ -35,8 +35,8 @@ export const config = {
     },
     externalApi: {
         api: {
-            baseUrl: env.ORDERS_HOSTNAME,
-            apiKey: env.ORDERS_API_KEY,
+            baseUrl: env.EXTERNAL_HOSTNAME,
+            apiKey: env.EXTERNAL_API_KEY,
             logger: syncLogger,
         },
         autoSyncOrders: {
