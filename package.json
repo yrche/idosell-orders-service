@@ -13,7 +13,13 @@
     "csv-stringify": "^6.6.0",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "luxon": "^3.7.2",
     "mongodb": "^7.0.0",
-    "nodemon": "^3.1.11"
+    "mongoose": "^9.0.2",
+    "nodemon": "^3.1.11",
+    "pino": "^10.1.0"
+  },
+  "devDependencies": {
+    "pino-pretty": "^13.1.3"
   }
 }

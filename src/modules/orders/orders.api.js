@@ -1,10 +1,10 @@
+import { externalApiLogger } from "../logger/external-api.logger.js";
 import https from 'node:https';
 import http from 'node:http';
 
 class Base {
     #apiKey;
     baseUrl;
-
     constructor(baseUrl) {
         this.baseUrl = new URL(baseUrl?.toString());
         this.#apiKey = null;
@@ -53,6 +53,7 @@ class Base {
                 if (res.statusCode >= 400) {
                     const error = new Error(`HTTP ${res.statusCode}`);
                     error.statusCode = res.statusCode;
+                    externalApiLogger.error('Request error', error)
                     res.resume()
                     return reject(error);
                 }
@@ -79,8 +80,12 @@ class Base {
                         reject(error);
                     }
                 });
-                res.on('error', reject);
-            }).on('error', () => reject("error")).end();
+
+                res.on('error', (error) => {
+                    externalApiLogger.error('Request error', error)
+                    reject(error)
+                });
+            }).on('error', (error) => reject(error)).end();
         })
     }
 }
@@ -100,15 +105,15 @@ export class OrdersAPI extends Base {
         const url = new URL(this.baseUrl)
         url.pathname = "/api/admin/v7/orders/orders"
         url.searchParams.set('resultsPage', page.toString())
-        url.searchParams.set('resultsLimi', limit.toString())
+        url.searchParams.set('resultsLimit', limit.toString())
         return await this.request(url);
     }
 
-    /**
-     *
-     * @param id
-     * @returns {Promise<*>}
-     */
+/**
+ *
+ * @param id
+ * @returns {Promise<*>}
+ */
     async getOrderById(id) {
         const url = new URL(this.baseUrl)
         url.pathname = "/api/admin/v7/orders/orders"
@@ -130,6 +135,7 @@ export class OrdersAPI extends Base {
                 orders.push(...data.Results)
                 page++
             } catch (error) {
+                externalApiLogger.error('An error occurred while trying to receive all orders', error)
                 break
             }
         }

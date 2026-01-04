@@ -1,9 +1,9 @@
 export class OrdersDto {
-    constructor(apiOrder) {
-        this.id = apiOrder.orderSerialNumber;
-        this.products = this._mapProducts(apiOrder.orderDetails.productsResults);
-        this.status = apiOrder.orderDetails.orderStatus;
-        this.totalWorth = apiOrder.orderDetails.payments.orderBaseCurrency.orderProductsCost;
+    constructor(order) {
+        this.id = order.orderSerialNumber;
+        this.products = this._mapProducts(order.orderDetails.productsResults);
+        this.status = order.orderDetails.orderStatus;
+        this.totalWorth = order.orderDetails.payments.orderBaseCurrency.orderProductsCost;
     }
 
     _mapProducts(products) {
@@ -24,7 +24,7 @@ export class OrdersDto {
             products: this.products,
             status: this.status,
             totalWorth: this.totalWorth,
-            updatedAt: new Date()
+            updateAt: new Date(),
         }
     }
 }

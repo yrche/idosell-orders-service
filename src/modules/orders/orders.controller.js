@@ -1,6 +1,9 @@
-import OrdersService from "./orders.service.js";
-
-class OrdersController {
+export default class OrdersController {
+    #logger;
+    constructor({ service, logger }) {
+        this.service = service;
+        this.#logger = logger;
+    }
 
     /**
      * @param req
@@ -10,11 +13,15 @@ class OrdersController {
      */
     async getOrders(req, res, next) {
         try {
-            const data = await OrdersService.exportOrdersToCsv(req?.query)
+            const data = await this.service.exportOrdersToCsv(req?.query)
 
-            res.setHeader('Content-Type', 'text/csv');
-            res.setHeader('Content-Disposition', 'attachment; filename="data.csv"');
-            res.send(data);
+            this.#logger.info(req, 'Export orders requested', {
+                query: req.query
+            })
+
+            res.setHeader('Content-Type', 'text/csv')
+            res.setHeader('Content-Disposition', 'attachment; filename="data.csv"')
+            res.send(data)
         } catch (error) {
             next(error)
         }
@@ -28,7 +35,11 @@ class OrdersController {
      */
     async getOrderById(req, res, next) {
         try {
-            const data = await OrdersService.exportOrderToCsvById(req.params.id)
+            const data = await this.service.exportOrderToCsvById(req.params.id)
+
+            this.#logger.info(req, 'Export order by id requested', {
+                id: req.params.id
+            })
 
             res.setHeader('Content-Type', 'text/csv');
             res.setHeader('Content-Disposition', 'attachment; filename="data.csv"');
@@ -39,5 +50,3 @@ class OrdersController {
     }
 
 }
-
-export default new OrdersController();

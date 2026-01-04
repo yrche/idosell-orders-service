@@ -1,11 +1,12 @@
 import { Router } from "express";
-import OrdersController from "./orders.controller.js";
-import queryValidation from "../middleware/validateQuery.middleware.js"
+import queryValidation from "../middleware/validate-query.middleware.js"
 import authMiddleware from "../middleware/auth.middleware.js";
 
-const router = new Router();
+export default function router(controller) {
+    const router = new Router();
 
-router.get('/orders', authMiddleware, queryValidation, OrdersController.getOrders);
-router.get('/orders/:id', authMiddleware, OrdersController.getOrderById)
+    router.get('/orders', authMiddleware, queryValidation, controller.getOrders.bind(controller));
+    router.get('/orders/:id', authMiddleware, controller.getOrderById.bind(controller))
 
-export { router }
+    return router
+}

@@ -3,14 +3,26 @@ import crypto from 'node:crypto';
 import process from 'node:process';
 import fs from "node:fs";
 
+// TODO: modernize functionality
 export class ApiKey {
-    constructor(path, salt) {
-        this.path = path
-        this.salt = salt
+    #logger;
+    constructor({ path, logger}) {
+        this.path = path;
+        this.#logger = logger;
     }
 
-    async writeToEnv(data) {
-        await fs.writeFile(this.path, `\nAPI_KEY=${data}`, {flag: 'a'}, err => {})
+    async writeToEnv(value) {
+        const readStream = fs.createReadStream(this.path, {encoding: 'utf8'})
+        const writeStream = fs.createWriteStream(this.path, {encoding: 'utf-8', flags: 'r+'})
+
+        readStream.on("data", (chunk) => {
+            if (chunk.match(/^API_KEY=[a-zA-Z0-9]+$/gm)) {
+                this.#logger.warn('Api Key already exists')
+            }
+            writeStream.write(chunk.replace(/^API_KEY=[a-zA-Z0-9]+$/gm, " "))
+            // writeStream.write(chunk.replace(/^API_KEY=[a-zA-Z0-9]+$/gm, `API_KEY=${value}`))
+            // console.log(chunk.replace(/^API_KEY=[a-zA-Z0-9]+$/gm, `API_KEY=${value}`))
+        })
     }
 
     async generate() {
@@ -22,22 +34,18 @@ export class ApiKey {
 
         rl.question('Enter secret phrase: ', async (secret) => {
             if (!secret || secret.length < 8) {
-                console.error('Secret phrase must be at least 8 characters');
+                this.#logger.error('Secret phrase must be at least 8 characters');
                 rl.close();
                 process.exit(1);
             }
 
             const apiKey = crypto
-                .createHmac('sha256', this.salt)
-                .update(secret)
-                .digest('hex');
 
             await this.writeToEnv(apiKey)
-
-            console.log('\nGenerated API KEY:\n');
-            console.log(apiKey);
+            this.#logger.info('Api Key successfully generated')
 
             rl.close();
         });
     }
 }
+

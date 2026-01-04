@@ -1,30 +1,30 @@
-import {mongodbConnect} from "../mongodb/mongodb.connect.js";
-import {stringify} from "csv-stringify";
+import { stringify } from "csv-stringify";
 import ApiError from "../exeptions/api.error.js";
 
-class OrdersService {
+export default class OrdersService {
+    #logger;
+    constructor({ model, logger }) {
+        this.model = model;
+        this.#logger = logger;
+    }
 
     /**
-     * @param collection
      * @param orders
      * @returns {Promise<*>}
      */
-    async updateNonDeprecatedOrders(collection, orders) {
+    async updateNonDeprecatedOrders(orders) {
         const deprecated = ["finished", "lost", "false"];
 
         if (!orders) {
+            this.#logger.warn({ context: 'service' }, 'No orders were specified')
             throw new Error("Data update error: no orders were specified")
-        }
-
-        if (!collection) {
-            throw new Error("Data update error: no collection were specified")
         }
 
         const options = orders.map((order) => {
             return {
                 updateOne: {
                     filter: { _id: order._id },
-                    update:  [
+                    update: [
                         {
                             $replaceRoot: {
                                 newRoot: {
@@ -37,13 +37,13 @@ class OrdersService {
                             }
                         }
                     ],
-                    upsert: true,
+                    upsert: true
                 }
             };
         })
 
         if (options.length > 0) {
-            return await collection.bulkWrite(options, { ordered: false });
+            return await this.model.bulkWrite(options, { ordered: false });
         }
     }
 
@@ -65,10 +65,7 @@ class OrdersService {
             filter.totalWorth = { $lte: Number(maxWorth) };
         }
 
-        const cluster = mongodbConnect.db("order")
-        const collection = cluster.collection("orders")
-
-        const data = await collection.find(filter).toArray();
+        const data = await this.model.find(filter).toArray();
 
         return await new Promise((resolve, reject) => {
             stringify(data, { header: true }, (err, result) => {
@@ -84,14 +81,16 @@ class OrdersService {
      */
     async exportOrderToCsvById(id) {
         if (!id) {
+            this.#logger.warn({ context: 'service' , id }, 'Order ID is required')
             throw ApiError.BadRequest("Order ID is required")
         }
 
-        const cluster = mongodbConnect.db("order")
-        const collection = cluster.collection("orders")
+        const data = await this.model.findOne({ _id: Number(id) })
 
-        const data = await collection.findOne({ _id: Number(id) })
-
+        if (!data) {
+            this.#logger.warn({ context: 'service' , id }, 'Order not found')
+            throw ApiError.BadRequest(`No such order with id: ${id}`)
+        }
 
         return await new Promise((resolve, reject) => {
             stringify([data], { header: true }, (err, result) => {
@@ -101,5 +100,3 @@ class OrdersService {
         });
     }
 }
-
-export default new OrdersService();
